@@ -2,6 +2,21 @@ import { describe, expect, jest, test } from '@jest/globals';
 import { Routes } from '../../src/routes.js';
 
 describe('Routes class test suite', () => {
+  const defaultParams = {
+    request: {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      method: '',
+      body: '',
+    },
+    response: {
+      setHeader: jest.fn(),
+      writeHead: jest.fn(),
+      end: jest.fn(),
+    },
+    values: () => Object.values(defaultParams),
+  };
   describe('setSocketInstance', () => {
     test('the function setSocketInstance should store io instance', () => {
       const routes = new Routes();
@@ -100,6 +115,38 @@ describe('Routes class test suite', () => {
       await routes.handler(...params.values());
 
       expect(routes.get).toHaveBeenCalled();
+    });
+  });
+
+  describe('GET route test suite', () => {
+    test('given method GET it shoul list all files downloaded', async () => {
+      const routes = new Routes();
+
+      const params = {
+        ...defaultParams,
+      };
+
+      const filesStatusesMock = [
+        {
+          size: '21.2 kB',
+          birthtime: '2021-12-26T20:44:52.126',
+          owner: 'breno',
+          file: 'img.jpg',
+        },
+      ];
+
+      jest
+        .spyOn(routes.fileHelper, routes.fileHelper.getFileStatus.name)
+        .mockResolvedValue(filesStatusesMock);
+
+      params.request.method = 'GET';
+
+      await routes.handler(...params.values());
+
+      expect(params.response.writeHead).toHaveBeenCalledWith(200);
+      expect(params.response.end).toHaveBeenCalledWith(
+        JSON.stringify(filesStatusesMock)
+      );
     });
   });
 });
