@@ -1,4 +1,4 @@
-import { logger } from './logger.js ';
+import { logger } from './logger.js';
 export class Routes {
   io;
   constructor() {}
@@ -17,18 +17,19 @@ export class Routes {
   }
 
   async post(request, response) {
-    logger.info('POST - ae');
+    logger.info('POST');
     response.end();
   }
 
   async get(request, response) {
-    logger.info('GET - ae');
+    logger.info('GET');
     response.end();
   }
 
   handler(request, response) {
     response.setHeader('Access-Control-Allow-Origin', '*');
-    const chosen = this[request.method.toLowerCase()] || this.defaultRoute();
+
+    const chosen = this[request.method.toLowerCase()] || this.defaultRoute;
 
     return chosen.apply(this, [request, response]);
   }
