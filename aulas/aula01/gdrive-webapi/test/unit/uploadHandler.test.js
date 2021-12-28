@@ -1,6 +1,7 @@
 import { describe, expect, jest, test } from '@jest/globals';
 import fs from 'fs';
 import { UploadHandler } from '../../src/uploadHandler';
+import { TestUtil } from '../_util/testUtil';
 
 describe('Upload Handler class test suite', () => {
   const ioObj = {
@@ -20,15 +21,22 @@ describe('Upload Handler class test suite', () => {
         'content-type': 'multipart/form-data; boundary=',
       };
 
-      const fn = jest.fn();
+      const onFinish = jest.fn();
 
-      uploadHandler.registerEvents(headers, fn);
+      const busboyInstance = uploadHandler.registerEvents(headers, onFinish);
+
+      const readableStream = TestUtil.generateReadableStream([
+        'chunk',
+        'of',
+        'data',
+      ]);
+
+      busboyInstance.emit('file', 'fieldname', readableStream, 'filename.csv');
+
+      busboyInstance.listeners('finish')[0].call();
 
       expect(uploadHandler.onFile).toHaveBeenCalled();
-      expect(fn).toHaveBeenCalled();
+      expect(onFinish).toHaveBeenCalled();
     });
-  });
-  test('aaa', () => {
-    expect(true).toBeTruthy();
   });
 });
