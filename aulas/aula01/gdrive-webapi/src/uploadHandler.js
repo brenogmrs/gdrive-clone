@@ -1,9 +1,18 @@
 import BusBoy from 'busboy';
+import { pipeline } from 'stream/promises';
 
 export class UploadHandler {
-  constructor({ io, socketId }) {}
+  constructor({ io, socketId, downloadsFolder }) {
+    this.io = io;
+    this.socketId = socketId;
+    this.downloadsFolder = downloadsFolder;
+  }
 
-  onFile(fieldname, file, filename) {}
+  handleFileBytes() {}
+
+  async onFile(fieldname, file, filename) {
+    await pipeline(file, this.handleFileBytes.apply(this, [filename]));
+  }
 
   registerEvents(headers, onFinish) {
     const busboy = new BusBoy({ headers });
