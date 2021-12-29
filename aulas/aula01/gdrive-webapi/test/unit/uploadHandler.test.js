@@ -1,5 +1,6 @@
 import { describe, expect, jest, test } from '@jest/globals';
 import fs from 'fs';
+import { resolve } from 'path';
 import { UploadHandler } from '../../src/uploadHandler';
 import { TestUtil } from '../_util/testUtil';
 
@@ -37,6 +38,51 @@ describe('Upload Handler class test suite', () => {
 
       expect(uploadHandler.onFile).toHaveBeenCalled();
       expect(onFinish).toHaveBeenCalled();
+    });
+  });
+
+  describe('onFile function', () => {
+    test('given an stream file it should save it on disc storage', async () => {
+      const chunks = ['hey', 'dude'];
+      const downloadsFolder = '/tmp';
+
+      const uploadHandler = new UploadHandler({
+        io: ioObj,
+        socketId: '01',
+        downloadsFolder,
+      });
+
+      const onData = jest.fn();
+
+      jest
+        .spyOn(fs, fs.createWriteStream.name)
+        .mockImplementation(() => TestUtil.generateWritableStream(onData));
+
+      const onTransform = jest.fn();
+
+      jest
+        .spyOn(uploadHandler, uploadHandler.handleFileBytes.name)
+        .mockImplementation(() => TestUtil.generatTransformStream(onTransform));
+
+      const params = {
+        fieldname: 'video',
+        file: TestUtil.generateReadableStream(chunks),
+        filename: 'mockFileName.mov',
+      };
+
+      await uploadHandler.onFile(...Object.values(params));
+
+      expect(onData.mock.calls.join()).toEqual(chunks.join());
+      expect(onTransform.mock.calls.join()).toEqual(chunks.join());
+
+      const expectedFilename = resolve(
+        uploadHandler.downloadsFolder,
+        params.filename
+      );
+
+      console.log(expectedFilename);
+
+      expect(fs.createWriteStream).toHaveBeenCalledWith(expectedFilename);
     });
   });
 });
