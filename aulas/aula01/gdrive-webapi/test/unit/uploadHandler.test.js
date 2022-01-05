@@ -1,6 +1,7 @@
 import { describe, expect, jest, test } from '@jest/globals';
 import fs from 'fs';
 import { resolve } from 'path';
+import { pipeline } from 'stream/promises';
 import { UploadHandler } from '../../src/uploadHandler';
 import { TestUtil } from '../_util/testUtil';
 
@@ -80,9 +81,33 @@ describe('Upload Handler class test suite', () => {
         params.filename
       );
 
-      console.log(expectedFilename);
-
       expect(fs.createWriteStream).toHaveBeenCalledWith(expectedFilename);
+    });
+  });
+
+  describe('handleFileBytes function', () => {
+    test('should call the emit function and it is a transform stream', async () => {
+      jest.spyOn(ioObj, ioObj.to.name);
+      jest.spyOn(ioObj, ioObj.emit.name);
+
+      const handler = new UploadHandler({
+        io: ioObj,
+        socketId: '01',
+      });
+
+      const messages = ['hello'];
+
+      const source = TestUtil.generateReadableStream(messages);
+      const onWrite = jest.fn();
+
+      const target = TestUtil.generateWritableStream(onWrite);
+
+      await pipeline(source, handler.handleFileBytes('filename.csv'), target);
+
+      expect(ioObj.to).toHaveBeenCalledTimes(messages.length);
+      expect(ioObj.emit).toHaveBeenCalledTimes(messages.length);
+      expect(onWrite).toBeCalledTimes(messages.length);
+      expect(onWrite.mock.calls.join()).toEqual(messages.join());
     });
   });
 });
